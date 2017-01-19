@@ -1,0 +1,133 @@
+---
+title: "Storm Types that have Harmful Health and Economic Consequences"
+author: "Damon Resnick"
+date: "January 16, 2017"
+output:
+  html_document:
+    keep_md: yes
+  pdf_document: default
+  word_document: default
+---
+
+### Synopsis  
+
+This document is a completion of an assignment from the last week of the Reproducible Research class on Coursera through Johns Hopkins, the fifth course in the Data Science specialization: "The basic goal of this assignment is to explore the NOAA Storm Database and answer some basic questions about severe weather events. You must use the database to answer the questions below and show the code for your entire analysis. Your analysis can consist of tables, figures, or other summaries. You may use any R package you want to support your analysis."  The events in the database start in the year 1950 and end in November 2011. In the earlier years of the database there are generally fewer events recorded, most likely due to a lack of good records. More recent years should be considered more complete.  
+
+The data analysis addresses the following questions:  
+
+1) Across the United States, which types of events (as indicated in the EVTYPE variable) are most harmful with respect to population health?  
+  
+2) Across the United States, which types of events have the greatest economic consequences?  
+
+#### Data was taken off the course website but comes from the National Weather Service.  
+
+```{r setup, include=FALSE}
+library(knitr)
+library(formatR)
+knitr::opts_chunk$set(echo = TRUE)
+opts_chunk$set(tidy.opts=list(width.cutoff=80),tidy=TRUE)
+opts_chunk$set(out.width='850px', dpi=300)
+```
+
+### Data Processing
+
+```{r, cache=TRUE }
+# This file is very large and takes about a minute to read into R.
+df <- read.csv("./repdataStormDatazip.bz2")
+head(df)
+```
+
+```{r}
+# check for NAs, they will be TRUEs
+#summary(is.na(df))
+# There are a few NAs in LATITUDE and LATITUDE_E column, and a lot in F column, with none in the other columns.
+```
+
+<br>   
+
+One question that we would like to answer is which types of events are most harmful with respect to population health?  The different storm types are shown in the EVTYPE column, while there is a fatality and injury column that matches to the storm type.
+```{r}
+summary(df$EVTYPE)
+# It looks like hail, high winds, and thunderstorms are common but right below these are tornados, flash flood, and etc.  These are probably contribute to the most fatalities.  Lets check this out.
+```
+
+<br>  
+
+Let's look at fatalities first.
+```{r}
+summary(df$FATALITIES)
+# Sum the number of fatalities by evtype
+fataltype <- aggregate(FATALITIES~EVTYPE, data = df, sum)
+# Order fataltype in descending order by number of fatalities
+ftord <- fataltype[order(fataltype[,2], decreasing = TRUE),]
+# Look at the first 10 most fatal types of weather events
+ftord10 <- ftord[1:10,]
+ftord10
+```
+<br>  
+
+So it looks like tornadoes have the most adverse effect on people in the US by resulting in 5633 fatalities from 1995 to 2011.  
+
+```{r}
+library(ggplot2)
+p1 <- ggplot(ftord10,aes(y = FATALITIES, x = EVTYPE, fill=EVTYPE)) + geom_bar(stat="identity") + labs(title="Number of Fatalities vs Storm Type", x="Storm Type",y="Number of Fatalities",fill="Storm Type") + theme(axis.text.x = element_text(angle = 60, hjust = 1))
+```
+<br>  
+
+Now lets look at injuries.
+```{r}
+summary(df$INJURIES)
+# Sum the number of injuries by evtype
+injurytype <- aggregate(INJURIES~EVTYPE, data = df, sum)
+# Order injurytype in descending order by number of injuries
+injord <- injurytype[order(injurytype[,2], decreasing = TRUE),]
+# Look at the first 10 most fatal types of weather events
+injord10 <- injord[1:10,]
+injord10
+```
+
+```{r}
+p2 <- ggplot(injord10,aes(y = INJURIES, x = EVTYPE, fill=EVTYPE)) + geom_bar(stat="identity") + labs(title="Number of Injuries vs Storm Type", x="Storm Type",y="Number of Injuries",fill="Storm Type") + theme(axis.text.x = element_text(angle = 60, hjust = 1))
+```
+
+<br>  
+
+Another question we would like to answer are what storm types cause the most economic damage.  
+
+```{r}
+summary(df$PROPDMG)
+# Sum the number of injuries by evtype
+propdmgtype <- aggregate(PROPDMG~EVTYPE, data = df, sum)
+# Order injurytype in descending order by number of injuries
+propord <- propdmgtype[order(propdmgtype[,2], decreasing = TRUE),]
+# Look at the first 10 most fatal types of weather events
+propord10 <- propord[1:10,]
+propord10
+```
+It looks like tornadoes once again are a major problem.
+
+<br>  
+
+### Results
+
+Plotted together you can see Fatalities and Injuries are mostly caused by the same thing, but tornadoes are the clear winner in both categories. 
+```{r}
+p1
+p2
+```
+
+<br>  
+
+```{r}
+p3 <- ggplot(propord10,aes(y = PROPDMG, x = EVTYPE, fill=EVTYPE)) + geom_bar(stat="identity") + labs(title="Amount of Property Damage vs Storm Type", x="Storm Type",y="Amount of Property Damage",fill="Storm Type") + theme(axis.text.x = element_text(angle = 60, hjust = 1))
+p3
+```
+
+We are also not too surprised to see tornadoes cause the most damage, and events like floods and extreme wind storms cause about half as much damage.
+
+<br>  
+
+### Conclusion
+
+Tornadoes are clearly the worst type of weather event in the United States.  Their frequency and destruction capability insure that they are deadly, cause many injuries, and have a large negative economic impact.
+
